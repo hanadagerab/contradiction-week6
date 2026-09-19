@@ -14,7 +14,8 @@ type Stage =
   | "baseline"
   | "contradiction"
   | "evidence"
-  | "transfer";
+  | "transfer"
+  | "final";
 
 type Decision = "continue" | "interrupt" | null;
 
@@ -64,6 +65,15 @@ export default function Home() {
   const [transferVariant, setTransferVariant] =
     useState<TransferVariant>("clearer-retest");
 
+  const [baselineResult, setBaselineResult] =
+    useState<Decision>(null);
+
+  const [contradictionResult, setContradictionResult] =
+    useState<Observation | null>(null);
+
+  const [transferResult, setTransferResult] =
+    useState<Observation | null>(null);
+
   const resetMeasurement = () => {
     setDecision(null);
     setProgress(0);
@@ -75,6 +85,7 @@ export default function Home() {
 
   const startBaseline = () => {
     resetMeasurement();
+    setBaselineResult(null);
     setRunId((current) => current + 1);
     setStage("baseline");
   };
@@ -93,12 +104,12 @@ export default function Home() {
   };
 
   const startTransfer = () => {
-    if (!observation) return;
+    if (!contradictionResult) return;
 
     const selectedVariant = selectTransferVariant({
-      decision: observation.decision,
-      thresholdCrossed: observation.thresholdCrossed,
-      handoffTriggered: observation.handoffTriggered,
+      decision: contradictionResult.decision,
+      thresholdCrossed: contradictionResult.thresholdCrossed,
+      handoffTriggered: contradictionResult.handoffTriggered,
     });
 
     resetMeasurement();
@@ -120,6 +131,28 @@ export default function Home() {
           }
         : current
     );
+
+    if (stage === "contradiction") {
+      setContradictionResult((current) =>
+        current
+          ? {
+              ...current,
+              handoffTriggered: true,
+            }
+          : current
+      );
+    }
+
+    if (stage === "transfer") {
+      setTransferResult((current) =>
+        current
+          ? {
+              ...current,
+              handoffTriggered: true,
+            }
+          : current
+      );
+    }
   };
 
   const recordContradictionDecision = (
@@ -140,7 +173,7 @@ export default function Home() {
 
     setDecision(selectedDecision);
 
-    setObservation({
+    const newObservation: Observation = {
       decision: selectedDecision,
       decisionTime,
       latencyMs,
@@ -151,7 +184,17 @@ export default function Home() {
           .commitmentThreshold,
       inputMethod: "button",
       handoffTriggered: false,
-    });
+    };
+
+    setObservation(newObservation);
+
+    if (stage === "contradiction") {
+      setContradictionResult(newObservation);
+    }
+
+    if (stage === "transfer") {
+      setTransferResult(newObservation);
+    }
   };
 
   if (stage === "baseline") {
@@ -212,18 +255,20 @@ export default function Home() {
             <div className="decision-actions">
               <button
                 className="secondary-action"
-                onClick={() =>
-                  setDecision("interrupt")
-                }
+                onClick={() => {
+                  setDecision("interrupt");
+                  setBaselineResult("interrupt");
+                }}
               >
                 INTERRUPT MOVEMENT
               </button>
 
               <button
                 className="primary-action"
-                onClick={() =>
-                  setDecision("continue")
-                }
+                onClick={() => {
+                  setDecision("continue");
+                  setBaselineResult("continue");
+                }}
               >
                 CONTINUE WITH THE GROUP
               </button>
@@ -694,13 +739,190 @@ export default function Home() {
 
                 <button
                   className="primary-action"
-                  onClick={() => setStage("overview")}
+                  onClick={() => setStage("final")}
                 >
-                  RETURN TO OVERVIEW
+                  VIEW FINAL EVIDENCE
                 </button>
               </div>
             </div>
           )}
+        </section>
+      </main>
+    );
+  }
+
+  if (
+    stage === "final" &&
+    baselineResult &&
+    contradictionResult &&
+    transferResult
+  ) {
+    const transferComplete =
+      transferResult.decision === "interrupt" &&
+      !transferResult.thresholdCrossed &&
+      transferResult.handoffTriggered;
+
+    return (
+      <main className="page-shell">
+        <section className="final-evidence-card">
+          <div className="eyebrow">
+            FINAL EVIDENCE / THREE REHEARSALS
+          </div>
+
+          <h1 className="evidence-title">
+            What was observed
+          </h1>
+
+          <p className="evidence-intro">
+            The comparison below reports simulated behavior only.
+          </p>
+
+          <div className="rehearsal-comparison">
+            <article className="comparison-card">
+              <span className="comparison-number">01</span>
+              <h2>Baseline</h2>
+
+              <dl>
+                <div>
+                  <dt>Decision</dt>
+                  <dd>
+                    {baselineResult === "continue"
+                      ? "Continue with the group"
+                      : "Interrupt movement"}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Safety contradiction</dt>
+                  <dd>None presented</dd>
+                </div>
+              </dl>
+            </article>
+
+            <article className="comparison-card">
+              <span className="comparison-number">02</span>
+              <h2>Contradiction</h2>
+
+              <dl>
+                <div>
+                  <dt>Decision</dt>
+                  <dd>
+                    {contradictionResult.decision === "interrupt"
+                      ? "Interrupt movement"
+                      : "Continue with the group"}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Cue → decision</dt>
+                  <dd>
+                    {contradictionResult.latencyMs !== null
+                      ? `${(
+                          contradictionResult.latencyMs / 1000
+                        ).toFixed(2)} s`
+                      : "No post-cue decision"}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Commitment threshold</dt>
+                  <dd>
+                    {contradictionResult.thresholdCrossed
+                      ? "Crossed before decision"
+                      : "Not crossed before decision"}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Safety handoff</dt>
+                  <dd>
+                    {contradictionResult.handoffTriggered
+                      ? "Triggered"
+                      : "Not triggered"}
+                  </dd>
+                </div>
+              </dl>
+            </article>
+
+            <article className="comparison-card">
+              <span className="comparison-number">03</span>
+              <h2>Transfer</h2>
+
+              <dl>
+                <div>
+                  <dt>Decision</dt>
+                  <dd>
+                    {transferResult.decision === "interrupt"
+                      ? "Interrupt movement"
+                      : "Continue with the group"}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Cue → decision</dt>
+                  <dd>
+                    {transferResult.latencyMs !== null
+                      ? `${(
+                          transferResult.latencyMs / 1000
+                        ).toFixed(2)} s`
+                      : "No post-cue decision"}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Commitment threshold</dt>
+                  <dd>
+                    {transferResult.thresholdCrossed
+                      ? "Crossed before decision"
+                      : "Not crossed before decision"}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Safety handoff</dt>
+                  <dd>
+                    {transferResult.handoffTriggered
+                      ? "Triggered"
+                      : "Not triggered"}
+                  </dd>
+                </div>
+              </dl>
+            </article>
+          </div>
+
+          <div className="transfer-observation">
+            <span>TRANSFER OBSERVATION</span>
+
+            <strong>
+              {transferComplete
+                ? "The target judgment appeared again in a new simulated scenario."
+                : "The target judgment did not transfer completely to the new simulated scenario."}
+            </strong>
+
+            <p>
+              Digital-to-digital transfer is evidence beyond one practiced
+              scene. It is not proof of real-world transfer.
+            </p>
+          </div>
+
+          <div className="claim-boundary">
+            <strong>Claim boundary</strong>
+
+            <p>
+              These rehearsals observed decisions under controlled simulated
+              conditions. They do not measure earthquake readiness, predict
+              real-world behavior, or certify competence.
+            </p>
+          </div>
+
+          <div className="evidence-actions">
+            <button
+              className="primary-action"
+              onClick={() => setStage("overview")}
+            >
+              RETURN TO OVERVIEW
+            </button>
+          </div>
         </section>
       </main>
     );
