@@ -1,9 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import BaselineScene from "@/components/BaselineScene";
+import EvacuationScene from "@/components/EvacuationScene";
 
-type Stage = "overview" | "boundary" | "baseline";
+type Stage =
+  | "overview"
+  | "boundary"
+  | "baseline"
+  | "contradiction";
+
 type Decision = "continue" | "interrupt" | null;
 
 const rehearsals = [
@@ -15,7 +20,7 @@ const rehearsals = [
   {
     number: "02",
     title: "Contradiction",
-    text: "A validated safety cue conflicts with the familiar route while the surrounding group continues moving.",
+    text: "A safety cue conflicts with the familiar route while the surrounding group continues moving.",
   },
   {
     number: "03",
@@ -28,11 +33,20 @@ export default function Home() {
   const [stage, setStage] = useState<Stage>("overview");
   const [decision, setDecision] = useState<Decision>(null);
   const [progress, setProgress] = useState(0);
+  const [cueActive, setCueActive] = useState(false);
 
-  const resetBaseline = () => {
+  const startBaseline = () => {
     setDecision(null);
     setProgress(0);
+    setCueActive(false);
     setStage("baseline");
+  };
+
+  const startContradiction = () => {
+    setDecision(null);
+    setProgress(0);
+    setCueActive(false);
+    setStage("contradiction");
   };
 
   if (stage === "baseline") {
@@ -53,8 +67,9 @@ export default function Home() {
         </section>
 
         <section className="simulation-frame">
-          <BaselineScene
-            paused={paused}
+          <EvacuationScene
+            scenario="baseline"
+            teacherPaused={paused}
             onProgressChange={setProgress}
           />
 
@@ -67,6 +82,7 @@ export default function Home() {
         <section className="decision-panel">
           <div className="decision-context">
             <span>ROUTE PROGRESS</span>
+
             <div className="progress-track">
               <div
                 className="progress-fill"
@@ -111,9 +127,116 @@ export default function Home() {
               <div className="observation-actions">
                 <button
                   className="secondary-action"
-                  onClick={resetBaseline}
+                  onClick={startBaseline}
                 >
                   RESTART BASELINE
+                </button>
+
+                <button
+                  className="primary-action"
+                  onClick={startContradiction}
+                >
+                  CONTINUE TO CONTRADICTION
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+      </main>
+    );
+  }
+
+  if (stage === "contradiction") {
+    const teacherPaused = decision === "interrupt";
+
+    return (
+      <main className="simulation-page">
+        <section className="simulation-header">
+          <div>
+            <div className="eyebrow">
+              REHEARSAL 02 / CONTROLLED CONTRADICTION
+            </div>
+
+            <h1 className="simulation-title">
+              Same sequence. Changed conditions.
+            </h1>
+          </div>
+
+          <div className="scenario-status">
+            <span className="status-dot" />
+            Controlled rehearsal
+          </div>
+        </section>
+
+        <section className="simulation-frame">
+          <EvacuationScene
+            scenario="contradiction"
+            teacherPaused={teacherPaused}
+            onProgressChange={setProgress}
+            onCueChange={setCueActive}
+          />
+
+          <div className="scene-label">
+            <span>FICTIONAL SCHOOL CORRIDOR</span>
+
+            <strong>
+              Continue observing the route and surrounding movement.
+            </strong>
+          </div>
+        </section>
+
+        <section className="decision-panel">
+          <div className="decision-context">
+            <span>ROUTE PROGRESS</span>
+
+            <div className="progress-track">
+              <div
+                className="progress-fill"
+                style={{ width: `${Math.round(progress * 100)}%` }}
+              />
+            </div>
+          </div>
+
+          {!decision ? (
+            <div className="decision-actions">
+              <button
+                className="secondary-action"
+                onClick={() => setDecision("interrupt")}
+              >
+                INTERRUPT MOVEMENT
+              </button>
+
+              <button
+                className="primary-action"
+                onClick={() => setDecision("continue")}
+              >
+                CONTINUE WITH THE GROUP
+              </button>
+            </div>
+          ) : (
+            <div className="baseline-observation">
+              <div>
+                <span>DECISION RECORDED</span>
+
+                <strong>
+                  {decision === "continue"
+                    ? "You chose to continue the rehearsed sequence."
+                    : "You chose to interrupt movement."}
+                </strong>
+
+                <p>
+                  {cueActive
+                    ? "The environmental condition had changed before this decision."
+                    : "This decision occurred before the predefined safety cue appeared."}
+                </p>
+              </div>
+
+              <div className="observation-actions">
+                <button
+                  className="secondary-action"
+                  onClick={startContradiction}
+                >
+                  RESTART CONTRADICTION
                 </button>
 
                 <button
@@ -176,7 +299,7 @@ export default function Home() {
 
             <button
               className="primary-button"
-              onClick={resetBaseline}
+              onClick={startBaseline}
             >
               START BASELINE
             </button>
