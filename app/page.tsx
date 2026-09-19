@@ -8,7 +8,8 @@ type Stage =
   | "overview"
   | "boundary"
   | "baseline"
-  | "contradiction";
+  | "contradiction"
+  | "evidence";
 
 type Decision = "continue" | "interrupt" | null;
 
@@ -241,6 +242,101 @@ export default function Home() {
     );
   }
 
+  if (stage === "evidence" && observation) {
+    return (
+      <main className="page-shell">
+        <section className="evidence-card">
+          <div className="eyebrow">
+            MILESTONE 1 / OBSERVED IN THIS SIMULATION
+          </div>
+
+          <h1 className="evidence-title">
+            Behavioral evidence
+          </h1>
+
+          <p className="evidence-intro">
+            This screen reports only what was observed in this controlled
+            simulated scenario.
+          </p>
+
+          <div className="evidence-grid">
+            <article className="evidence-item">
+              <span>DECISION</span>
+              <strong>
+                {observation.decision === "interrupt"
+                  ? "Interrupt movement"
+                  : "Continue with the group"}
+              </strong>
+            </article>
+
+            <article className="evidence-item">
+              <span>CUE → DECISION TIME</span>
+              <strong>
+                {observation.latencyMs !== null
+                  ? `${(observation.latencyMs / 1000).toFixed(2)} s`
+                  : "Decision occurred before cue"}
+              </strong>
+            </article>
+
+            <article className="evidence-item">
+              <span>PROGRESS AT DECISION</span>
+              <strong>
+                {Math.round(observation.progressAtDecision * 100)}%
+              </strong>
+            </article>
+
+            <article className="evidence-item">
+              <span>COMMITMENT THRESHOLD</span>
+              <strong>
+                {observation.thresholdCrossed
+                  ? "Crossed before decision"
+                  : "Not crossed before decision"}
+              </strong>
+            </article>
+
+            <article className="evidence-item">
+              <span>SAFETY HANDOFF</span>
+              <strong>
+                {observation.handoffTriggered
+                  ? "Triggered"
+                  : "Not triggered"}
+              </strong>
+            </article>
+
+            <article className="evidence-item">
+              <span>INPUT METHOD</span>
+              <strong>Button</strong>
+            </article>
+          </div>
+
+          <div className="claim-boundary">
+            <strong>Claim boundary</strong>
+            <p>
+              This simulation observed one decision under controlled conditions.
+              It does not predict your behavior during a real earthquake.
+            </p>
+          </div>
+
+          <div className="evidence-actions">
+            <button
+              className="secondary-action"
+              onClick={startContradiction}
+            >
+              REPEAT CONTRADICTION
+            </button>
+
+            <button
+              className="primary-action"
+              onClick={() => setStage("overview")}
+            >
+              RETURN TO OVERVIEW
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   if (stage === "contradiction") {
     const teacherPaused =
       decision === "interrupt";
@@ -399,10 +495,10 @@ export default function Home() {
                 <button
                   className="primary-action"
                   onClick={() =>
-                    setStage("overview")
+                    setStage("evidence")
                   }
                 >
-                  RETURN TO OVERVIEW
+                  VIEW EVIDENCE
                 </button>
               </div>
             </div>

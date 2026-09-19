@@ -492,3 +492,100 @@ h1 {
 .handoff-state .primary-action {
   margin-top: 2px;
 }
+
+/* ---------------------------------------
+   MILESTONE 1 EVIDENCE
+--------------------------------------- */
+
+.evidence-card {
+  width: min(980px, 100%);
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 48px;
+  box-shadow: 0 18px 60px rgba(30, 45, 40, 0.08);
+}
+
+.evidence-title {
+  font-size: clamp(2.8rem, 6vw, 5rem);
+  margin-bottom: 18px;
+}
+
+.evidence-intro {
+  max-width: 700px;
+  margin: 0 0 32px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.evidence-item {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+  background: #fbfcfa;
+}
+
+.evidence-item span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.evidence-item strong {
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+
+.claim-boundary {
+  margin-top: 22px;
+  padding: 20px;
+  border-radius: 16px;
+  background: var(--soft-accent);
+  border: 1px solid rgba(40, 79, 71, 0.12);
+}
+
+.claim-boundary strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--accent-dark);
+}
+
+.claim-boundary p {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.evidence-actions {
+  margin-top: 26px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+@media (max-width: 800px) {
+  .evidence-card {
+    padding: 28px 20px;
+  }
+
+  .evidence-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .evidence-actions {
+    flex-direction: column-reverse;
+  }
+
+  .evidence-actions button {
+    width: 100%;
+  }
+}
