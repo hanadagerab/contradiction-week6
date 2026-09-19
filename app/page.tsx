@@ -3,13 +3,18 @@
 import { useRef, useState } from "react";
 import EvacuationScene from "@/components/EvacuationScene";
 import { SCENARIO_CONFIG } from "@/lib/scenarioConfig";
+import {
+  selectTransferVariant,
+  type TransferVariant,
+} from "@/lib/transferLogic";
 
 type Stage =
   | "overview"
   | "boundary"
   | "baseline"
   | "contradiction"
-  | "evidence";
+  | "evidence"
+  | "transfer";
 
 type Decision = "continue" | "interrupt" | null;
 
@@ -56,6 +61,9 @@ export default function Home() {
   const [handoffTriggered, setHandoffTriggered] =
     useState(false);
 
+  const [transferVariant, setTransferVariant] =
+    useState<TransferVariant>("clearer-retest");
+
   const resetMeasurement = () => {
     setDecision(null);
     setProgress(0);
@@ -82,6 +90,21 @@ export default function Home() {
 
     cueStartedAtRef.current = performance.now();
     setCueActive(true);
+  };
+
+  const startTransfer = () => {
+    if (!observation) return;
+
+    const selectedVariant = selectTransferVariant({
+      decision: observation.decision,
+      thresholdCrossed: observation.thresholdCrossed,
+      handoffTriggered: observation.handoffTriggered,
+    });
+
+    resetMeasurement();
+    setTransferVariant(selectedVariant);
+    setRunId((current) => current + 1);
+    setStage("transfer");
   };
 
   const triggerSafetyHandoff = () => {
@@ -327,9 +350,9 @@ export default function Home() {
 
             <button
               className="primary-action"
-              onClick={() => setStage("overview")}
+              onClick={startTransfer}
             >
-              RETURN TO OVERVIEW
+              CONTINUE TO TRANSFER
             </button>
           </div>
         </section>
@@ -499,6 +522,169 @@ export default function Home() {
                   }
                 >
                   VIEW EVIDENCE
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+      </main>
+    );
+  }
+
+  if (stage === "transfer") {
+    const teacherPaused =
+      decision === "interrupt";
+
+    return (
+      <main className="simulation-page">
+        <section className="simulation-header">
+          <div>
+            <div className="eyebrow">
+              REHEARSAL 03 / TRANSFER
+            </div>
+
+            <h1 className="simulation-title">
+              New surface. Same judgment.
+            </h1>
+          </div>
+
+          <div className="scenario-status">
+            <span className="status-dot" />
+            Digital transfer test
+          </div>
+        </section>
+
+        <section className="simulation-frame">
+          <EvacuationScene
+            key={`transfer-${runId}`}
+            scenario="transfer"
+            teacherPaused={teacherPaused}
+            onProgressChange={setProgress}
+            onCueChange={handleCueChange}
+            transferVariant={transferVariant}
+          />
+
+          <div className="scene-label">
+            <span>FICTIONAL SCHOOL CORRIDOR</span>
+
+            <strong>
+              Surface conditions differ from the previous rehearsal.
+            </strong>
+          </div>
+        </section>
+
+        <section className="decision-panel">
+          {!observation ? (
+            <>
+              <div className="decision-context">
+                <span>ROUTE PROGRESS</span>
+
+                <div className="progress-track">
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${Math.round(progress * 100)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="decision-actions">
+                <button
+                  className="secondary-action"
+                  onClick={() =>
+                    recordContradictionDecision("interrupt")
+                  }
+                >
+                  INTERRUPT MOVEMENT
+                </button>
+
+                <button
+                  className="primary-action"
+                  onClick={() =>
+                    recordContradictionDecision("continue")
+                  }
+                >
+                  CONTINUE WITH THE GROUP
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="baseline-observation">
+              <div>
+                <span>
+                  OBSERVED IN TRANSFER
+                </span>
+
+                <strong>
+                  {observation.decision === "interrupt"
+                    ? "Movement interrupted."
+                    : "Rehearsed sequence continued."}
+                </strong>
+
+                <p>
+                  Decision at{" "}
+                  {Math.round(
+                    observation.progressAtDecision * 100
+                  )}
+                  % route progress ·{" "}
+                  {observation.latencyMs !== null
+                    ? `${(
+                        observation.latencyMs / 1000
+                      ).toFixed(2)} s after cue`
+                    : "before cue"}{" "}
+                  · threshold{" "}
+                  {observation.thresholdCrossed
+                    ? "crossed"
+                    : "not crossed"}
+                </p>
+
+                {observation.decision === "interrupt" && (
+                  <div className="handoff-state">
+                    {!handoffTriggered ? (
+                      <>
+                        <p>
+                          Movement is paused. Trigger the next action
+                          within the school&apos;s civil-protection
+                          structure.
+                        </p>
+
+                        <button
+                          className="primary-action"
+                          onClick={triggerSafetyHandoff}
+                        >
+                          TRIGGER SAFETY HANDOFF
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <strong>
+                          Simulated handoff activated
+                        </strong>
+
+                        <p>
+                          The designated civil-protection role now owns
+                          the next procedural action.
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="observation-actions">
+                <button
+                  className="secondary-action"
+                  onClick={startTransfer}
+                >
+                  RESTART TRANSFER
+                </button>
+
+                <button
+                  className="primary-action"
+                  onClick={() => setStage("overview")}
+                >
+                  RETURN TO OVERVIEW
                 </button>
               </div>
             </div>
