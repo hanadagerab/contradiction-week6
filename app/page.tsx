@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import BaselineScene from "@/components/BaselineScene";
+
+type Stage = "overview" | "boundary" | "baseline";
+type Decision = "continue" | "interrupt" | null;
 
 const rehearsals = [
   {
@@ -21,9 +25,112 @@ const rehearsals = [
 ];
 
 export default function Home() {
-  const [started, setStarted] = useState(false);
+  const [stage, setStage] = useState<Stage>("overview");
+  const [decision, setDecision] = useState<Decision>(null);
+  const [progress, setProgress] = useState(0);
 
-  if (started) {
+  const resetBaseline = () => {
+    setDecision(null);
+    setProgress(0);
+    setStage("baseline");
+  };
+
+  if (stage === "baseline") {
+    const paused = decision === "interrupt";
+
+    return (
+      <main className="simulation-page">
+        <section className="simulation-header">
+          <div>
+            <div className="eyebrow">REHEARSAL 01 / BASELINE</div>
+            <h1 className="simulation-title">Normal sequence</h1>
+          </div>
+
+          <div className="scenario-status">
+            <span className="status-dot" />
+            No validated contradiction
+          </div>
+        </section>
+
+        <section className="simulation-frame">
+          <BaselineScene
+            paused={paused}
+            onProgressChange={setProgress}
+          />
+
+          <div className="scene-label">
+            <span>FICTIONAL SCHOOL CORRIDOR</span>
+            <strong>Follow the marked evacuation sequence.</strong>
+          </div>
+        </section>
+
+        <section className="decision-panel">
+          <div className="decision-context">
+            <span>ROUTE PROGRESS</span>
+            <div className="progress-track">
+              <div
+                className="progress-fill"
+                style={{ width: `${Math.round(progress * 100)}%` }}
+              />
+            </div>
+          </div>
+
+          {!decision ? (
+            <div className="decision-actions">
+              <button
+                className="secondary-action"
+                onClick={() => setDecision("interrupt")}
+              >
+                INTERRUPT MOVEMENT
+              </button>
+
+              <button
+                className="primary-action"
+                onClick={() => setDecision("continue")}
+              >
+                CONTINUE WITH THE GROUP
+              </button>
+            </div>
+          ) : (
+            <div className="baseline-observation">
+              <div>
+                <span>OBSERVED IN THIS REHEARSAL</span>
+
+                <strong>
+                  {decision === "continue"
+                    ? "You chose to continue the rehearsed sequence."
+                    : "You chose to interrupt the rehearsed sequence."}
+                </strong>
+
+                <p>
+                  No validated safety contradiction was present in this baseline
+                  scenario.
+                </p>
+              </div>
+
+              <div className="observation-actions">
+                <button
+                  className="secondary-action"
+                  onClick={resetBaseline}
+                >
+                  RESTART BASELINE
+                </button>
+
+                <button
+                  className="primary-action"
+                  onClick={() => setStage("overview")}
+                >
+                  RETURN TO OVERVIEW
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+      </main>
+    );
+  }
+
+  if (stage === "boundary") {
     return (
       <main className="page-shell">
         <section className="boundary-card">
@@ -50,7 +157,7 @@ export default function Home() {
           </div>
 
           <div className="action-preview">
-            <span>Later in the simulation, your available actions will be:</span>
+            <span>During the rehearsals, your decisions may include:</span>
 
             <div className="action-list">
               <div>CONTINUE WITH THE GROUP</div>
@@ -59,9 +166,21 @@ export default function Home() {
             </div>
           </div>
 
-          <button className="primary-button" onClick={() => setStarted(false)}>
-            BACK TO OVERVIEW
-          </button>
+          <div className="boundary-buttons">
+            <button
+              className="secondary-action"
+              onClick={() => setStage("overview")}
+            >
+              BACK
+            </button>
+
+            <button
+              className="primary-button"
+              onClick={resetBaseline}
+            >
+              START BASELINE
+            </button>
+          </div>
         </section>
       </main>
     );
@@ -102,7 +221,10 @@ export default function Home() {
             scenarios. It does not measure real-world earthquake readiness.
           </p>
 
-          <button className="primary-button" onClick={() => setStarted(true)}>
+          <button
+            className="primary-button"
+            onClick={() => setStage("boundary")}
+          >
             BEGIN
           </button>
         </div>

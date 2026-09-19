@@ -230,3 +230,238 @@ h1 {
     width: 100%;
   }
 }
+
+/* ---------------------------------------
+   BASELINE 3D REHEARSAL
+--------------------------------------- */
+
+.simulation-page {
+  min-height: 100vh;
+  background: #eef0ec;
+  padding: 24px;
+}
+
+.simulation-header {
+  width: min(1180px, 100%);
+  margin: 0 auto 18px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.simulation-header .eyebrow {
+  margin-bottom: 8px;
+}
+
+.simulation-title {
+  font-size: clamp(2rem, 4vw, 3.7rem);
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.scenario-status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6f9685;
+}
+
+.simulation-frame {
+  width: min(1180px, 100%);
+  height: min(62vh, 650px);
+  min-height: 430px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid #cfd5cf;
+  background: #dfe4df;
+  box-shadow: 0 18px 50px rgba(30, 45, 40, 0.08);
+}
+
+.simulation-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.scene-label {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  max-width: 310px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.scene-label span {
+  display: block;
+  font-size: 0.67rem;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.scene-label strong {
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.decision-panel {
+  width: min(1180px, 100%);
+  margin: 16px auto 0;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.decision-context {
+  width: min(310px, 35%);
+}
+
+.decision-context > span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.progress-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e5e8e5;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 100ms linear;
+}
+
+.decision-actions,
+.observation-actions,
+.boundary-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.primary-action,
+.secondary-action {
+  min-height: 46px;
+  border-radius: 999px;
+  padding: 12px 18px;
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+}
+
+.primary-action {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: white;
+}
+
+.secondary-action {
+  border: 1px solid #bcc6c1;
+  background: white;
+  color: var(--accent-dark);
+}
+
+.baseline-observation {
+  width: 100%;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.baseline-observation span {
+  display: block;
+  font-size: 0.67rem;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 5px;
+}
+
+.baseline-observation strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.baseline-observation p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.boundary-buttons {
+  justify-content: space-between;
+}
+
+@media (max-width: 800px) {
+  .simulation-page {
+    padding: 14px;
+  }
+
+  .simulation-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .simulation-frame {
+    min-height: 400px;
+    height: 55vh;
+  }
+
+  .decision-panel,
+  .baseline-observation {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .decision-context {
+    width: 100%;
+  }
+
+  .decision-actions,
+  .observation-actions,
+  .boundary-buttons {
+    width: 100%;
+    flex-direction: column-reverse;
+  }
+
+  .decision-actions button,
+  .observation-actions button,
+  .boundary-buttons button {
+    width: 100%;
+  }
+}
