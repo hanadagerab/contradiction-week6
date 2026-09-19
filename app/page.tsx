@@ -19,6 +19,7 @@ type Observation = {
   progressAtDecision: number;
   thresholdCrossed: boolean;
   inputMethod: "button";
+  handoffTriggered: boolean;
 };
 
 const rehearsals = [
@@ -51,12 +52,16 @@ export default function Home() {
   const [observation, setObservation] =
     useState<Observation | null>(null);
 
+  const [handoffTriggered, setHandoffTriggered] =
+    useState(false);
+
   const resetMeasurement = () => {
     setDecision(null);
     setProgress(0);
     setCueActive(false);
     cueStartedAtRef.current = null;
     setObservation(null);
+    setHandoffTriggered(false);
   };
 
   const startBaseline = () => {
@@ -76,6 +81,21 @@ export default function Home() {
 
     cueStartedAtRef.current = performance.now();
     setCueActive(true);
+  };
+
+  const triggerSafetyHandoff = () => {
+    if (!observation || observation.decision !== "interrupt") return;
+
+    setHandoffTriggered(true);
+
+    setObservation((current) =>
+      current
+        ? {
+            ...current,
+            handoffTriggered: true,
+          }
+        : current
+    );
   };
 
   const recordContradictionDecision = (
@@ -102,6 +122,7 @@ export default function Home() {
         SCENARIO_CONFIG.contradiction
           .commitmentThreshold,
       inputMethod: "button",
+      handoffTriggered: false,
     });
   };
 
@@ -334,6 +355,37 @@ export default function Home() {
                     ? "crossed"
                     : "not crossed"}
                 </p>
+
+                {observation.decision === "interrupt" && (
+                  <div className="handoff-state">
+                    {!handoffTriggered ? (
+                      <>
+                        <p>
+                          Movement is paused. The next action belongs within
+                          the school&apos;s civil-protection structure.
+                        </p>
+
+                        <button
+                          className="primary-action"
+                          onClick={triggerSafetyHandoff}
+                        >
+                          TRIGGER SAFETY HANDOFF
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <strong>
+                          Simulated handoff activated
+                        </strong>
+
+                        <p>
+                          The designated civil-protection role now owns the
+                          next procedural action.
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="observation-actions">

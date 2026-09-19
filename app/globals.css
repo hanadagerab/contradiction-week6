@@ -465,3 +465,30 @@ h1 {
     width: 100%;
   }
 }
+
+/* ---------------------------------------
+   SAFETY HANDOFF
+--------------------------------------- */
+
+.handoff-state {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--soft-accent);
+  border: 1px solid rgba(40, 79, 71, 0.14);
+}
+
+.handoff-state p {
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.handoff-state strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--accent-dark);
+}
+
+.handoff-state .primary-action {
+  margin-top: 2px;
+}
