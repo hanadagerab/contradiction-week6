@@ -10,6 +10,22 @@ export const SCENARIO_CONFIG = {
     commitmentThreshold: 0.48,
   },
 
+  transfer: {
+    commitmentThreshold: 0.48,
+
+    variants: {
+      "stronger-social-pressure": {
+        cueProgress: 0.36,
+        crowdSpeed: 1.05,
+      },
+
+      "clearer-retest": {
+        cueProgress: 0.24,
+        crowdSpeed: 0.72,
+      },
+    },
+  },
+
   crowd: {
     speed: 0.75,
   },
