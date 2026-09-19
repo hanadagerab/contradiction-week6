@@ -127,6 +127,10 @@ export default function Home() {
   ) => {
     if (decision) return;
 
+    // Contradiction and Transfer decisions only count
+    // after the predefined safety cue has appeared.
+    if (cueStartedAtRef.current === null) return;
+
     const decisionTime = performance.now();
 
     const latencyMs =
@@ -590,23 +594,31 @@ export default function Home() {
               </div>
 
               <div className="decision-actions">
-                <button
-                  className="secondary-action"
-                  onClick={() =>
-                    recordContradictionDecision("interrupt")
-                  }
-                >
-                  INTERRUPT MOVEMENT
-                </button>
+                {!cueActive ? (
+                  <div className="decision-waiting">
+                    OBSERVE CONDITIONS
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      className="secondary-action"
+                      onClick={() =>
+                        recordContradictionDecision("interrupt")
+                      }
+                    >
+                      INTERRUPT MOVEMENT
+                    </button>
 
-                <button
-                  className="primary-action"
-                  onClick={() =>
-                    recordContradictionDecision("continue")
-                  }
-                >
-                  CONTINUE WITH THE GROUP
-                </button>
+                    <button
+                      className="primary-action"
+                      onClick={() =>
+                        recordContradictionDecision("continue")
+                      }
+                    >
+                      CONTINUE WITH THE GROUP
+                    </button>
+                  </>
+                )}
               </div>
             </>
           ) : (
