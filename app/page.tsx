@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import EvacuationScene from "@/components/EvacuationScene";
+import { SCENARIO_CONFIG } from "@/lib/scenarioConfig";
 
 type Stage =
   | "overview"
@@ -10,6 +11,15 @@ type Stage =
   | "contradiction";
 
 type Decision = "continue" | "interrupt" | null;
+
+type Observation = {
+  decision: Exclude<Decision, null>;
+  decisionTime: number;
+  latencyMs: number | null;
+  progressAtDecision: number;
+  thresholdCrossed: boolean;
+  inputMethod: "button";
+};
 
 const rehearsals = [
   {
@@ -31,22 +41,68 @@ const rehearsals = [
 
 export default function Home() {
   const [stage, setStage] = useState<Stage>("overview");
+  const [runId, setRunId] = useState(0);
   const [decision, setDecision] = useState<Decision>(null);
   const [progress, setProgress] = useState(0);
-  const [cueActive, setCueActive] = useState(false);
 
-  const startBaseline = () => {
+  const [cueActive, setCueActive] = useState(false);
+  const cueStartedAtRef = useRef<number | null>(null);
+
+  const [observation, setObservation] =
+    useState<Observation | null>(null);
+
+  const resetMeasurement = () => {
     setDecision(null);
     setProgress(0);
     setCueActive(false);
+    cueStartedAtRef.current = null;
+    setObservation(null);
+  };
+
+  const startBaseline = () => {
+    resetMeasurement();
+    setRunId((current) => current + 1);
     setStage("baseline");
   };
 
   const startContradiction = () => {
-    setDecision(null);
-    setProgress(0);
-    setCueActive(false);
+    resetMeasurement();
+    setRunId((current) => current + 1);
     setStage("contradiction");
+  };
+
+  const handleCueChange = (active: boolean) => {
+    if (!active || cueStartedAtRef.current !== null) return;
+
+    cueStartedAtRef.current = performance.now();
+    setCueActive(true);
+  };
+
+  const recordContradictionDecision = (
+    selectedDecision: Exclude<Decision, null>
+  ) => {
+    if (decision) return;
+
+    const decisionTime = performance.now();
+
+    const latencyMs =
+      cueStartedAtRef.current !== null
+        ? decisionTime - cueStartedAtRef.current
+        : null;
+
+    setDecision(selectedDecision);
+
+    setObservation({
+      decision: selectedDecision,
+      decisionTime,
+      latencyMs,
+      progressAtDecision: progress,
+      thresholdCrossed:
+        progress >=
+        SCENARIO_CONFIG.contradiction
+          .commitmentThreshold,
+      inputMethod: "button",
+    });
   };
 
   if (stage === "baseline") {
@@ -56,8 +112,13 @@ export default function Home() {
       <main className="simulation-page">
         <section className="simulation-header">
           <div>
-            <div className="eyebrow">REHEARSAL 01 / BASELINE</div>
-            <h1 className="simulation-title">Normal sequence</h1>
+            <div className="eyebrow">
+              REHEARSAL 01 / BASELINE
+            </div>
+
+            <h1 className="simulation-title">
+              Normal sequence
+            </h1>
           </div>
 
           <div className="scenario-status">
@@ -68,6 +129,7 @@ export default function Home() {
 
         <section className="simulation-frame">
           <EvacuationScene
+            key={`baseline-${runId}`}
             scenario="baseline"
             teacherPaused={paused}
             onProgressChange={setProgress}
@@ -75,7 +137,9 @@ export default function Home() {
 
           <div className="scene-label">
             <span>FICTIONAL SCHOOL CORRIDOR</span>
-            <strong>Follow the marked evacuation sequence.</strong>
+            <strong>
+              Follow the marked evacuation sequence.
+            </strong>
           </div>
         </section>
 
@@ -86,7 +150,11 @@ export default function Home() {
             <div className="progress-track">
               <div
                 className="progress-fill"
-                style={{ width: `${Math.round(progress * 100)}%` }}
+                style={{
+                  width: `${Math.round(
+                    progress * 100
+                  )}%`,
+                }}
               />
             </div>
           </div>
@@ -95,14 +163,18 @@ export default function Home() {
             <div className="decision-actions">
               <button
                 className="secondary-action"
-                onClick={() => setDecision("interrupt")}
+                onClick={() =>
+                  setDecision("interrupt")
+                }
               >
                 INTERRUPT MOVEMENT
               </button>
 
               <button
                 className="primary-action"
-                onClick={() => setDecision("continue")}
+                onClick={() =>
+                  setDecision("continue")
+                }
               >
                 CONTINUE WITH THE GROUP
               </button>
@@ -110,7 +182,9 @@ export default function Home() {
           ) : (
             <div className="baseline-observation">
               <div>
-                <span>OBSERVED IN THIS REHEARSAL</span>
+                <span>
+                  OBSERVED IN THIS REHEARSAL
+                </span>
 
                 <strong>
                   {decision === "continue"
@@ -119,8 +193,8 @@ export default function Home() {
                 </strong>
 
                 <p>
-                  No validated safety contradiction was present in this baseline
-                  scenario.
+                  No validated safety contradiction was
+                  present in this baseline scenario.
                 </p>
               </div>
 
@@ -147,7 +221,8 @@ export default function Home() {
   }
 
   if (stage === "contradiction") {
-    const teacherPaused = decision === "interrupt";
+    const teacherPaused =
+      decision === "interrupt";
 
     return (
       <main className="simulation-page">
@@ -170,64 +245,94 @@ export default function Home() {
 
         <section className="simulation-frame">
           <EvacuationScene
+            key={`contradiction-${runId}`}
             scenario="contradiction"
             teacherPaused={teacherPaused}
             onProgressChange={setProgress}
-            onCueChange={setCueActive}
+            onCueChange={handleCueChange}
           />
 
           <div className="scene-label">
             <span>FICTIONAL SCHOOL CORRIDOR</span>
 
             <strong>
-              Continue observing the route and surrounding movement.
+              Continue observing the route and
+              surrounding movement.
             </strong>
           </div>
         </section>
 
         <section className="decision-panel">
-          <div className="decision-context">
-            <span>ROUTE PROGRESS</span>
+          {!observation ? (
+            <>
+              <div className="decision-context">
+                <span>ROUTE PROGRESS</span>
 
-            <div className="progress-track">
-              <div
-                className="progress-fill"
-                style={{ width: `${Math.round(progress * 100)}%` }}
-              />
-            </div>
-          </div>
+                <div className="progress-track">
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${Math.round(
+                        progress * 100
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </div>
 
-          {!decision ? (
-            <div className="decision-actions">
-              <button
-                className="secondary-action"
-                onClick={() => setDecision("interrupt")}
-              >
-                INTERRUPT MOVEMENT
-              </button>
+              <div className="decision-actions">
+                <button
+                  className="secondary-action"
+                  onClick={() =>
+                    recordContradictionDecision(
+                      "interrupt"
+                    )
+                  }
+                >
+                  INTERRUPT MOVEMENT
+                </button>
 
-              <button
-                className="primary-action"
-                onClick={() => setDecision("continue")}
-              >
-                CONTINUE WITH THE GROUP
-              </button>
-            </div>
+                <button
+                  className="primary-action"
+                  onClick={() =>
+                    recordContradictionDecision(
+                      "continue"
+                    )
+                  }
+                >
+                  CONTINUE WITH THE GROUP
+                </button>
+              </div>
+            </>
           ) : (
             <div className="baseline-observation">
               <div>
-                <span>DECISION RECORDED</span>
+                <span>
+                  OBSERVED IN THIS SIMULATION
+                </span>
 
                 <strong>
-                  {decision === "continue"
-                    ? "You chose to continue the rehearsed sequence."
-                    : "You chose to interrupt movement."}
+                  {observation.decision === "interrupt"
+                    ? "Movement interrupted."
+                    : "Rehearsed sequence continued."}
                 </strong>
 
                 <p>
-                  {cueActive
-                    ? "The environmental condition had changed before this decision."
-                    : "This decision occurred before the predefined safety cue appeared."}
+                  Decision at{" "}
+                  {Math.round(
+                    observation.progressAtDecision *
+                      100
+                  )}
+                  % route progress ·{" "}
+                  {observation.latencyMs !== null
+                    ? `${(
+                        observation.latencyMs / 1000
+                      ).toFixed(2)} s after cue`
+                    : "before cue"}{" "}
+                  · threshold{" "}
+                  {observation.thresholdCrossed
+                    ? "crossed"
+                    : "not crossed"}
                 </p>
               </div>
 
@@ -241,7 +346,9 @@ export default function Home() {
 
                 <button
                   className="primary-action"
-                  onClick={() => setStage("overview")}
+                  onClick={() =>
+                    setStage("overview")
+                  }
                 >
                   RETURN TO OVERVIEW
                 </button>
@@ -257,30 +364,40 @@ export default function Home() {
     return (
       <main className="page-shell">
         <section className="boundary-card">
-          <div className="eyebrow">ROLE BOUNDARY</div>
+          <div className="eyebrow">
+            ROLE BOUNDARY
+          </div>
 
-          <h1>Your responsibility is the class.</h1>
+          <h1>
+            Your responsibility is the class.
+          </h1>
 
           <div className="boundary-copy">
             <p>
-              You are responsible for keeping your class together and responding
+              You are responsible for keeping your
+              class together and responding
               appropriately to changing conditions.
             </p>
 
             <p>
-              You are not being asked to independently redesign the school
-              evacuation route.
+              You are not being asked to independently
+              redesign the school evacuation route.
             </p>
 
             <p>
-              If new evidence makes automatic continuation inappropriate, your
-              task is to interrupt movement and trigger the next action within
-              the school&apos;s civil-protection structure.
+              If new evidence makes automatic
+              continuation inappropriate, your task is
+              to interrupt movement and trigger the next
+              action within the school&apos;s
+              civil-protection structure.
             </p>
           </div>
 
           <div className="action-preview">
-            <span>During the rehearsals, your decisions may include:</span>
+            <span>
+              During the rehearsals, your decisions may
+              include:
+            </span>
 
             <div className="action-list">
               <div>CONTINUE WITH THE GROUP</div>
@@ -292,7 +409,9 @@ export default function Home() {
           <div className="boundary-buttons">
             <button
               className="secondary-action"
-              onClick={() => setStage("overview")}
+              onClick={() =>
+                setStage("overview")
+              }
             >
               BACK
             </button>
@@ -312,26 +431,36 @@ export default function Home() {
   return (
     <main className="page-shell">
       <section className="hero">
-        <div className="eyebrow">BROWSER-BASED 3D SIMULATION</div>
+        <div className="eyebrow">
+          BROWSER-BASED 3D SIMULATION
+        </div>
 
         <h1>CONTRADICTION</h1>
 
         <p className="subtitle">
-          A controlled rehearsal of the moment when following the plan becomes
-          the wrong behavior.
+          A controlled rehearsal of the moment when
+          following the plan becomes the wrong behavior.
         </p>
 
         <p className="intro">
-          You will complete three short evacuation rehearsals. The objective is
-          not to find the perfect escape route. The objective is to decide when
-          the rehearsed sequence should continue — and when new evidence
-          requires you to interrupt it.
+          You will complete three short evacuation
+          rehearsals. The objective is not to find the
+          perfect escape route. The objective is to
+          decide when the rehearsed sequence should
+          continue — and when new evidence requires you
+          to interrupt it.
         </p>
 
         <div className="rehearsal-grid">
           {rehearsals.map((rehearsal) => (
-            <article className="rehearsal-card" key={rehearsal.number}>
-              <span className="number">{rehearsal.number}</span>
+            <article
+              className="rehearsal-card"
+              key={rehearsal.number}
+            >
+              <span className="number">
+                {rehearsal.number}
+              </span>
+
               <h2>{rehearsal.title}</h2>
               <p>{rehearsal.text}</p>
             </article>
@@ -340,13 +469,16 @@ export default function Home() {
 
         <div className="footer-row">
           <p>
-            This experience observes decisions inside controlled simulated
-            scenarios. It does not measure real-world earthquake readiness.
+            This experience observes decisions inside
+            controlled simulated scenarios. It does not
+            measure real-world earthquake readiness.
           </p>
 
           <button
             className="primary-button"
-            onClick={() => setStage("boundary")}
+            onClick={() =>
+              setStage("boundary")
+            }
           >
             BEGIN
           </button>
