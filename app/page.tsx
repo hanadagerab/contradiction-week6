@@ -7,6 +7,7 @@ import {
   selectTransferVariant,
   type TransferVariant,
 } from "@/lib/transferLogic";
+import { useInterruptVoice } from "@/hooks/useInterruptVoice";
 
 type Stage =
   | "overview"
@@ -196,6 +197,22 @@ export default function Home() {
       setTransferResult(newObservation);
     }
   };
+
+  const voiceDecisionEnabled =
+    (stage === "contradiction" ||
+      stage === "transfer") &&
+    cueActive &&
+    decision === null;
+
+  const {
+    supported: voiceSupported,
+    listening: voiceListening,
+    startListening,
+  } = useInterruptVoice(
+    voiceDecisionEnabled,
+    () =>
+      recordContradictionDecision("interrupt")
+  );
 
   if (stage === "baseline") {
     const paused = decision === "interrupt";

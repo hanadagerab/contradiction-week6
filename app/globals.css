@@ -716,3 +716,25 @@ h1 {
     padding: 28px 20px;
   }
 }
+
+/* ---------------------------------------
+   OPTIONAL VOICE INTERRUPT
+--------------------------------------- */
+
+.voice-action {
+  min-height: 46px;
+  border-radius: 999px;
+  padding: 12px 16px;
+  border: 1px dashed #9eaaa4;
+  background: #f8f9f7;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.voice-action:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
